@@ -35,8 +35,19 @@ let test_error (module C : Caqti_blocking.CONNECTION) =
    | Error err ->
       Alcotest.failf "unexpected error from bad_select: %a" Caqti_error.pp err)
 
+let signed_req =
+  Req.(int -->! int @:- "SELECT x FROM (SELECT ? x) t")
+
+let test_signed expected (module C : Caqti_blocking.CONNECTION) =
+  (match C.find signed_req expected with
+   | Ok actual ->
+     Alcotest.(check int) "x" expected actual
+   | Error err ->
+     Alcotest.failf "unexpected error from signed: %a" Caqti_error.pp err)
+
 let test_cases_on_connection = [
   "test_error", `Quick, test_error;
+  "test_signed", `Quick, test_signed (-1);
 ]
 
 let mk_test (name, pool) =
