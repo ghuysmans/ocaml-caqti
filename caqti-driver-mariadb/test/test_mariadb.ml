@@ -36,12 +36,13 @@ let test_error (module C : Caqti_blocking.CONNECTION) =
       Alcotest.failf "unexpected error from bad_select: %a" Caqti_error.pp err)
 
 let signed_req =
-  Req.(int -->! int @:- "SELECT x FROM (SELECT ? x) t")
+  Req.(int -->! t2 int int @:- "SELECT x, -1 FROM (SELECT ? x) t")
 
 let test_signed expected (module C : Caqti_blocking.CONNECTION) =
   (match C.find signed_req expected with
-   | Ok actual ->
-     Alcotest.(check int) "x" expected actual
+   | Ok (rt, const) ->
+     Alcotest.(check int) "constant" (-1) const;
+     Alcotest.(check int) "round trip" expected rt;
    | Error err ->
      Alcotest.failf "unexpected error from signed: %a" Caqti_error.pp err)
 
